@@ -104,6 +104,6 @@ export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET || "development-secret-should-fail-in-production",
 };
 
-if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET && process.env.NEXT_PHASE !== "phase-production-build") {
     console.warn("WARNING: NEXTAUTH_SECRET is not set in production. This will likely cause the 'Server Configuration' error.");
 }
