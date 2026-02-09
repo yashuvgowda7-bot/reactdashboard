@@ -37,31 +37,43 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
+                console.log("Authorize attempt for:", credentials?.email);
+                if (!process.env.NEXTAUTH_SECRET) {
+                    console.error("CRITICAL: NEXTAUTH_SECRET is not defined in environment variables.");
+                }
                 if (!credentials?.email || !credentials?.password) {
                     throw new Error("Invalid credentials");
                 }
 
-                const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
-                });
+                try {
+                    const user = await prisma.user.findUnique({
+                        where: { email: credentials.email },
+                    });
 
-                if (!user) {
-                    throw new Error("Invalid credentials");
+                    if (!user) {
+                        console.log("User not found:", credentials.email);
+                        throw new Error("Invalid credentials");
+                    }
+
+                    const isPasswordValid = await compare(credentials.password, user.password);
+
+                    if (!isPasswordValid) {
+                        console.log("Invalid password for:", credentials.email);
+                        throw new Error("Invalid credentials");
+                    }
+
+                    console.log("Login successful for:", credentials.email);
+                    return {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name,
+                        role: user.role,
+                        isApproved: user.isApproved,
+                    };
+                } catch (error) {
+                    console.error("Authorize error:", error);
+                    throw error;
                 }
-
-                const isPasswordValid = await compare(credentials.password, user.password);
-
-                if (!isPasswordValid) {
-                    throw new Error("Invalid credentials");
-                }
-
-                return {
-                    id: user.id,
-                    email: user.email,
-                    name: user.name,
-                    role: user.role,
-                    isApproved: user.isApproved,
-                };
             },
         }),
     ],
@@ -89,5 +101,9 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: "jwt",
     },
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || "development-secret-should-fail-in-production",
 };
+
+if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+    console.warn("WARNING: NEXTAUTH_SECRET is not set in production. This will likely cause the 'Server Configuration' error.");
+}
