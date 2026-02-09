@@ -13,3 +13,7 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+if (!process.env.DATABASE_URL && process.env.NODE_ENV === "production") {
+  console.warn("Warning: DATABASE_URL is not set. Database connection will fail at runtime.");
+}
