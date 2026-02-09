@@ -37,10 +37,6 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                console.log("Authorize attempt for:", credentials?.email);
-                if (!process.env.NEXTAUTH_SECRET) {
-                    console.error("CRITICAL: NEXTAUTH_SECRET is not defined in environment variables.");
-                }
                 if (!credentials?.email || !credentials?.password) {
                     throw new Error("Invalid credentials");
                 }
@@ -51,18 +47,15 @@ export const authOptions: NextAuthOptions = {
                     });
 
                     if (!user) {
-                        console.log("User not found:", credentials.email);
                         throw new Error("Invalid credentials");
                     }
 
                     const isPasswordValid = await compare(credentials.password, user.password);
 
                     if (!isPasswordValid) {
-                        console.log("Invalid password for:", credentials.email);
                         throw new Error("Invalid credentials");
                     }
 
-                    console.log("Login successful for:", credentials.email);
                     return {
                         id: user.id,
                         email: user.email,
@@ -71,7 +64,6 @@ export const authOptions: NextAuthOptions = {
                         isApproved: user.isApproved,
                     };
                 } catch (error) {
-                    console.error("Authorize error:", error);
                     throw error;
                 }
             },
